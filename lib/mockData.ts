@@ -1,33 +1,35 @@
 import { ModelConfig } from '@/context/AppContext';
 
 export const MODELS: ModelConfig[] = [
+  // Free AI Models
+  {
+    id: 'groq',
+    name: 'Groq (Free)',
+    description: 'Fast Llama 3 inference',
+    contextWindow: '8K tokens',
+    speed: 'fast',
+  },
+  {
+    id: 'together',
+    name: 'Together AI (Free)',
+    description: 'Free Llama 2 model ($25 credits)',
+    contextWindow: '4K tokens',
+    speed: 'medium',
+  },
+  // Mock Models (for demo)
   {
     id: 'gpt-4',
-    name: 'GPT-4',
-    description: 'Most capable model, best for complex tasks',
+    name: 'GPT-4 (Demo)',
+    description: 'Mock GPT-4 responses for demo',
     contextWindow: '8K tokens',
     speed: 'medium',
   },
   {
-    id: 'gpt-3.5',
-    name: 'GPT-3.5 Turbo',
-    description: 'Fast and efficient for most tasks',
-    contextWindow: '4K tokens',
-    speed: 'fast',
-  },
-  {
     id: 'claude-opus',
-    name: 'Claude Opus',
-    description: 'Extended context, excellent for analysis',
+    name: 'Claude (Demo)',
+    description: 'Mock Claude responses for demo',
     contextWindow: '200K tokens',
     speed: 'slow',
-  },
-  {
-    id: 'gemini-pro',
-    name: 'Gemini Pro',
-    description: 'Multimodal capabilities',
-    contextWindow: '32K tokens',
-    speed: 'medium',
   },
 ];
 

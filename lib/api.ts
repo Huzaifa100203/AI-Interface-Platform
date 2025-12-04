@@ -1,4 +1,5 @@
 import { MODELS } from './mockData';
+import { callGroqAPI, callTogetherAPI } from './aiProviders';
 
 // export type Role = keyof typeof Roles
 // type Permission = (typeof Roles)[Role][number];
@@ -82,33 +83,49 @@ export interface ChatCompletionResponse {
     }
 }
 
-// Mock Chat completion API
-
-export async function createChatCompletion ( request :ChatCompletionRequest) : Promise<ChatCompletionResponse> {
-
-    // Simulate API delay based on model speed
+// Chat completion API with real AI providers
+export async function createChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
     const model = MODELS.find(m => m.id === request.model);
     const delayMs = model?.speed === 'fast' ? 500 : model?.speed === 'medium' ? 1000 : 1500;
-
-    await delay(delayMs);
-
-    // Generate mock response
-    const content = getMockResponse(request.model, request.prompt);
-
-    // Calculate mock token usage
+    
+    let content: string;
+    
+    try {
+        // Try real AI APIs first
+        if (request.model === 'groq') {
+            console.log('Calling Groq API...');
+            content = await callGroqAPI(request.prompt, request.temperature);
+            console.log('Groq API success');
+        } else if (request.model === 'together') {
+            console.log('Calling Together API...');
+            content = await callTogetherAPI(request.prompt, request.temperature);
+            console.log('Together API success');
+        } else {
+            // Fallback to mock response
+            await delay(delayMs);
+            content = getMockResponse(request.model, request.prompt);
+        }
+    } catch (error) {
+        console.error('API Error:', error);
+        // Fallback to mock on API failure
+        await delay(delayMs);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        content = getMockResponse(request.model, request.prompt) + `\n\n(Note: Using mock response. API Error: ${errorMsg})`;
+    }
+    
     const promptTokens = Math.floor(request.prompt.length / 4);
     const completionTokens = Math.floor(content.length / 4);
-
+    
     return {
         id: `resp-${Date.now()}`,
         model: request.model,
         content,
-        usage : {
+        usage: {
             promptTokens,
             completionTokens,
             totalTokens: promptTokens + completionTokens,
         }
-    }
+    };
 }
 
 export async function getAvailableModels() {
