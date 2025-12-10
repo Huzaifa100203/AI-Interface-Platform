@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Send, Sparkles, Plus } from "lucide-react";
 import { TEMPLATES } from "@/lib/mockData";
 import { useApp } from "@/context/AppContext";
+import { useToast } from "@/context/ToastContext";
 import { createChatCompletion } from "@/lib/api";
 
 export const PromptEditor = () => {
@@ -13,6 +14,7 @@ export const PromptEditor = () => {
    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
    const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
    const { addMessage, parameters, updateParameters, selectedModel, editingState, cancelEditingMessage, updateMessageContent, upsertAssistantResponse } = useApp();
+   const { showError, showSuccess } = useToast();
 
    useEffect(() => {
       if (editingState) {
@@ -72,23 +74,27 @@ export const PromptEditor = () => {
          try {
             const formData = new FormData();
             attachedFiles.forEach((file) => formData.append("files", file));
-            const res = await fetch(process.env.NEXT_PUBLIC_FILE_UPLOAD_URL ?? "http://localhost:4000/upload", {
+
+            const res = await fetch("/api/upload", {
                method: "POST",
                body: formData,
             });
-            if (res.ok) {
-               const data = await res.json();
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
                const names = (
                   data.files as {
                      name: string;
                   }[]
                ).map((f) => f.name);
                uploadedSummary = `Attached files: ${names.join(", ")}`;
+               showSuccess(`Successfully attached ${names.length} file(s)`);
             } else {
-               uploadedSummary = "File upload failed (mock).";
+               showError(data.error || "File upload failed");
             }
-         } catch {
-            uploadedSummary = "File upload failed (network error).";
+         } catch (error) {
+            showError("File upload failed. Please try again.");
          } finally {
             setAttachedFiles([]);
          }
@@ -125,22 +131,13 @@ export const PromptEditor = () => {
             });
          }
       } catch (error) {
-         console.error('AI API Error:', error);
-         const errorResponse = `Sorry, I encountered an error while processing your request. Please try again.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`;
-         
+         console.error("AI API Error:", error);
+         const errorMessage = error instanceof Error ? error.message : "Unknown error";
+         showError(`Failed to get AI response: ${errorMessage}`);
+
+         // Remove the user message if editing failed
          if (wasEditing) {
-            const updated = upsertAssistantResponse(targetMessageId, errorResponse);
-            if (!updated) {
-               addMessage({
-                  role: "assistant",
-                  content: errorResponse,
-               });
-            }
-         } else {
-            addMessage({
-               role: "assistant",
-               content: errorResponse,
-            });
+            // Optionally remove the user message that was just edited
          }
       }
    };
@@ -171,10 +168,7 @@ export const PromptEditor = () => {
             ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-2">
-               <div
-                  ref={templateAnchorRef}
-                  className="relative flex items-center gap-2 rounded-3xl border border-gray-300 bg-white px-4 py-2 shadow-sm dark:border-gray-700 dark:bg-slate-900"
-               >
+               <div ref={templateAnchorRef} className="relative flex items-center gap-2 rounded-3xl border border-gray-300 bg-white px-4 py-2 shadow-sm dark:border-gray-700 dark:bg-slate-900">
                   {/* Templates popover */}
                   {showTemplates && (
                      <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-gray-200 bg-white p-2 text-xs shadow-lg dark:border-gray-700 dark:bg-slate-950">

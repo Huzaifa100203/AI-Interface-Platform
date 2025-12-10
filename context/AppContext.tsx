@@ -15,6 +15,7 @@ export interface ChatSession {
    messages: Message[];
    createdAt: number;
    model: string;
+   greetingShown?: boolean;
 }
 export interface ModelConfig {
    id: string;
@@ -79,6 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       messages: [],
       createdAt: Date.now(),
       model: defaultModel,
+      greetingShown: false,
    };
    const [sessions, setSessions] = useState<ChatSession[]>([initialSession]);
    const [currentSessionId, setCurrentSessionId] = useState<string | null>(initialSession.id);
@@ -104,6 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
          messages: [],
          createdAt: Date.now(),
          model: selectedModel,
+         greetingShown: false,
       };
       setSessions((prev) => [newSession, ...prev]);
       setCurrentSessionId(newSession.id);
@@ -127,7 +130,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
          timestamp: Date.now(),
       };
 
-      setSessions((prev) => prev.map((session) => (session.id === currentSessionId ? { ...session, messages: [...session.messages, newMessage] } : session)));
+      setSessions((prev) =>
+         prev.map((session) => {
+            if (session.id === currentSessionId) {
+               // Mark greeting as shown when first user message is added
+               const shouldHideGreeting = message.role === "user" && session.messages.length === 0;
+               return {
+                  ...session,
+                  messages: [...session.messages, newMessage],
+                  greetingShown: shouldHideGreeting ? true : session.greetingShown,
+               };
+            }
+            return session;
+         })
+      );
       return newMessage.id;
    };
 

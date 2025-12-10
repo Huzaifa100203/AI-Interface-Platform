@@ -2,13 +2,19 @@
 
 import { Copy, Edit3, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { copyToClipboard, formatMessageTime } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 
 export const ChatOutput = () => {
-   const { messages, startEditingMessage } = useApp();
+   const { messages, startEditingMessage, sessions, currentSessionId } = useApp();
+   const { user } = useAuth();
    const messagesEndRef = useRef<HTMLDivElement>(null);
    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+   const currentSession = sessions.find((s) => s.id === currentSessionId);
+   const showGreeting = currentSession && messages.length === 0 && (currentSession.greetingShown === false || currentSession.greetingShown === undefined);
+   const userName = user?.username || "there";
 
    const handleCopy = async (id: string, text: string) => {
       const ok = await copyToClipboard(text);
@@ -23,7 +29,7 @@ export const ChatOutput = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
    }, [messages]);
 
-   if (messages.length === 0) {
+   if (messages.length === 0 && !showGreeting) {
       return (
          <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
             <div className="text-center">
@@ -40,6 +46,17 @@ export const ChatOutput = () => {
 
    return (
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+         {/* Greeting Message - shown on new session, hidden after first message */}
+         {showGreeting && (
+            <div className="flex justify-start">
+               <div className="max-w-3xl rounded-2xl px-4 py-3 shadow-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                  <p className="text-sm whitespace-pre-wrap">
+                     Hello, {userName}! 👋 Welcome to the AI Interface Platform. How can I assist you today?
+                  </p>
+               </div>
+            </div>
+         )}
+         
          {messages.map((message) => {
             const isUser = message.role === "user";
             return (

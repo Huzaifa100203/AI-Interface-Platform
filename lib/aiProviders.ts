@@ -15,16 +15,24 @@ export const AI_PROVIDERS = {
   }
 };
 
+import { authenticatedFetch } from './api-client';
+
 export async function callGroqAPI(message: string, temperature: number = 0.7) {
-  const response = await fetch("/api/groq", {
+  const response = await authenticatedFetch("/api/groq", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, temperature })
   });
   
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Groq API failed: ${error}`);
+    let errorMessage = "Failed to get response from Groq API";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      const errorText = await response.text();
+      errorMessage = errorText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
   
   const data = await response.json();
@@ -32,15 +40,21 @@ export async function callGroqAPI(message: string, temperature: number = 0.7) {
 }
 
 export async function callTogetherAPI(message: string, temperature: number = 0.7) {
-  const response = await fetch("/api/together", {
+  const response = await authenticatedFetch("/api/together", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, temperature })
   });
   
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Together API failed: ${error}`);
+    let errorMessage = "Failed to get response from Together API";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      const errorText = await response.text();
+      errorMessage = errorText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
   
   const data = await response.json();

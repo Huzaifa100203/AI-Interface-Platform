@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight, User } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { formatTimestamp } from "@/lib/utils";
 import AlertDialog from "@/components/ui/AlertDialog";
+import { ProfileModal } from "@/components/ProfileModal";
 
 export const ChatSidebar = () => {
    const [isOpen, setIsOpen] = useState(true);
    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+   const [profileModalOpen, setProfileModalOpen] = useState(false);
    const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
    const { sessions, currentSessionId, createSession, deleteSession, setCurrentSession } = useApp();
 
@@ -68,7 +70,20 @@ export const ChatSidebar = () => {
                   </div>
                ))}
             </div>
+
+            {/* Profile Button */}
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+               <button
+                  onClick={() => setProfileModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+               >
+                  <User className="h-4 w-4" />
+                  Profile
+               </button>
+            </div>
          </div>
+
+         <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
 
          <AlertDialog
             open={deleteDialogOpen}
